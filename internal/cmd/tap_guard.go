@@ -19,6 +19,7 @@ is violated. They're called before the tool runs, preventing the
 forbidden operation entirely.
 
 Available guards:
+  bead-first         - Require a primed, hooked Polecat for mutations
   pr-workflow        - Block PR creation and feature branches
   bd-init            - Block bd init in wrong directories
   mol-patrol         - Block mol patrol from agent contexts
@@ -64,6 +65,7 @@ Humans running outside Gas Town with a fork origin can still use PRs.`,
 func init() {
 	tapCmd.AddCommand(tapGuardCmd)
 	tapGuardCmd.AddCommand(tapGuardPRWorkflowCmd)
+	tapGuardCmd.AddCommand(tapGuardBeadFirstCmd)
 }
 
 func runTapGuardPRWorkflow(cmd *cobra.Command, args []string) error {

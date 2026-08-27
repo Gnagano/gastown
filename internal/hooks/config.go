@@ -1018,6 +1018,10 @@ func DefaultBase() *HooksConfig {
 	return &HooksConfig{
 		PreToolUse: []HookEntry{
 			{
+				Matcher: "Write|Edit|MultiEdit|NotebookEdit|Bash",
+				Hooks: []Hook{{Type: "command", Command: gtCommand("gt tap guard bead-first")}},
+			},
+			{
 				Matcher: "Bash(gh pr create*)",
 				Hooks: []Hook{{
 					Type:    "command",
