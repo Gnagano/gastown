@@ -484,9 +484,10 @@ func handleMoleculeComplete(cwd, townRoot, moleculeID string, dryRun bool) error
 			Assignee: agentID,
 			Priority: -1,
 		})
-		if err == nil && len(pinnedBeads) > 0 {
-			// Unpin by setting status to open
-			unpinCmd := exec.Command("bd", "update", pinnedBeads[0].ID, "--status=open")
+		if completed := pinnedIssueByID(pinnedBeads, moleculeID); err == nil && completed != nil {
+			// Unpin only the molecule that completed. A newer assignment may
+			// already be pinned to the same agent and must remain untouched.
+			unpinCmd := exec.Command("bd", "update", completed.ID, "--status=open")
 			unpinCmd.Dir = gitRoot
 			unpinCmd.Stderr = os.Stderr
 			if err := unpinCmd.Run(); err != nil {
@@ -526,6 +527,15 @@ func handleMoleculeComplete(cwd, townRoot, moleculeID string, dryRun bool) error
 
 	// For other roles, just print completion message
 	fmt.Printf("\nMolecule %s is complete. Ready for next assignment.\n", moleculeID)
+	return nil
+}
+
+func pinnedIssueByID(issues []*beads.Issue, id string) *beads.Issue {
+	for _, issue := range issues {
+		if issue != nil && issue.ID == id {
+			return issue
+		}
+	}
 	return nil
 }
 
