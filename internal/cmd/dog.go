@@ -692,7 +692,10 @@ func runDogDone(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("clearing completed work for dog %s: %w", name, err)
 	}
 	if !cleared {
-		fmt.Printf("Dog %s assignment changed while completing %s; preserving newer work %s\n", name, dogDoneWork, d.Work)
+		if dogDoneWork == "" {
+			return fmt.Errorf("dog %s has active work; rerun with --work <assigned-work-id> so completion cannot clear a newer assignment", name)
+		}
+		fmt.Printf("Dog %s assignment changed while completing %s; preserving current work\n", name, dogDoneWork)
 		return nil
 	}
 
@@ -733,7 +736,7 @@ func runDogDone(cmd *cobra.Command, args []string) error {
 // time an old dog session exits; that newer assignment must remain working.
 func clearDogWorkForCompletion(mgr *dog.Manager, d *dog.Dog, expectedWork string) (bool, error) {
 	if expectedWork == "" {
-		return true, mgr.ClearWork(d.Name)
+		return false, nil
 	}
 	if d.Work != expectedWork {
 		return false, nil
