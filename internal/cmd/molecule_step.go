@@ -276,6 +276,15 @@ func handleStepContinue(cwd, townRoot string, nextStep *beads.Issue, dryRun bool
 		TownRoot: townRoot,
 		WorkDir:  cwd,
 	}
+	// Older or partially upgraded dog sessions can carry a generic GT_ROLE
+	// while BD_ACTOR still truthfully identifies the dog. Never route those
+	// sessions through the polecat-only `gt done` command.
+	if dogName, ok := dogNameFromActor(os.Getenv("BD_ACTOR")); ok {
+		roleCtx.Role = RoleDog
+		if roleCtx.Polecat == "" {
+			roleCtx.Polecat = dogName
+		}
+	}
 	agentID := buildAgentIdentity(roleCtx)
 	if agentID == "" {
 		return fmt.Errorf("cannot determine agent identity (role: %s)", roleCtx.Role)
@@ -442,6 +451,12 @@ func handleMoleculeComplete(cwd, townRoot, moleculeID string, dryRun bool) error
 		TownRoot: townRoot,
 		WorkDir:  cwd,
 	}
+	if dogName, ok := dogNameFromActor(os.Getenv("BD_ACTOR")); ok {
+		roleCtx.Role = RoleDog
+		if roleCtx.Polecat == "" {
+			roleCtx.Polecat = dogName
+		}
+	}
 	agentID := buildAgentIdentity(roleCtx)
 
 	// Get git root for hook files
@@ -499,7 +514,7 @@ func handleMoleculeComplete(cwd, townRoot, moleculeID string, dryRun bool) error
 	if roleCtx.Role == RoleDog {
 		fmt.Printf("%s Signaling dog completion...\n", style.Bold.Render("📤"))
 
-		dogDoneArgs := []string{"dog", "done"}
+		dogDoneArgs := []string{"dog", "done", "--work", moleculeID}
 		if roleCtx.Polecat != "" { // dog name stored in Polecat field
 			dogDoneArgs = append(dogDoneArgs, roleCtx.Polecat)
 		}
@@ -512,6 +527,18 @@ func handleMoleculeComplete(cwd, townRoot, moleculeID string, dryRun bool) error
 	// For other roles, just print completion message
 	fmt.Printf("\nMolecule %s is complete. Ready for next assignment.\n", moleculeID)
 	return nil
+}
+
+func dogNameFromActor(actor string) (string, bool) {
+	actor = strings.TrimSpace(actor)
+	if actor == "dog" {
+		return "", true
+	}
+	parts := strings.Split(actor, "/")
+	if len(parts) == 3 && parts[0] == "deacon" && parts[1] == "dogs" && parts[2] != "" {
+		return parts[2], true
+	}
+	return "", false
 }
 
 // getGitRoot is defined in prime.go
