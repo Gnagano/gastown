@@ -345,6 +345,28 @@ func TestDogDone_ExpectedWorkIsIdempotent(t *testing.T) {
 	}
 }
 
+func TestDogDone_WithoutExpectedWorkPreservesAssignment(t *testing.T) {
+	m, tmpDir := testDogManager(t)
+	setupTestDog(t, m, tmpDir, "alpha", &dog.DogState{
+		Name: "alpha", State: dog.StateIdle, CreatedAt: time.Now(), UpdatedAt: time.Now(),
+	})
+	if err := m.AssignWork("alpha", "mol-next"); err != nil {
+		t.Fatal(err)
+	}
+	assigned, err := m.Get("alpha")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleared, err := clearDogWorkForCompletion(m, assigned, "")
+	if err != nil || cleared {
+		t.Fatalf("unscoped completion = (%v, %v), want (false, nil)", cleared, err)
+	}
+	got, _ := m.Get("alpha")
+	if got.State != dog.StateWorking || got.Work != "mol-next" {
+		t.Fatalf("dog = (%s, %q), want (working, mol-next)", got.State, got.Work)
+	}
+}
+
 // =============================================================================
 // Dog Clear Tests
 // =============================================================================
